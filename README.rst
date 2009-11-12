@@ -95,3 +95,6 @@ Some examples:
     >>> district_geo = fiftystates.District.geo('ny', '2009-2010', 'lower', -73.675451, 42.737498)
     >>> district.name == district_geo.name
     True
+
+    >>> print district.legislators[0].roles[0].contact_info[0].phone
+    518-455-4474

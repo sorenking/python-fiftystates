@@ -43,6 +43,13 @@ class FiftyStatesApiObject(object):
     
 class Role(FiftyStatesApiObject):
 
+    class ContactInfo(FiftyStatesApiObject):
+        pass
+
+    def __init__(self, obj):
+        super(Role, self).__init__(obj)
+        self.contact_info = map(self.ContactInfo, self.contact_info)
+
     def __str__(self):
         return '%s %s %s district %s' % (self.state, self.chamber,
                                          self.session, self.district)
@@ -62,7 +69,7 @@ class Legislator(FiftyStatesApiObject):
         return map(Legislator, obj)
 
     def __init__(self, obj):
-        self.__dict__.update(obj)
+        super(Legislator, self).__init__(obj)
         self.roles = map(Role, self.roles)
 
     def __str__(self):
@@ -84,7 +91,7 @@ class District(FiftyStatesApiObject):
         return District(obj)
 
     def __init__(self, obj):
-        self.__dict__.update(obj)
+        super(District, self).__init__(obj)
         self.legislators = map(Legislator, self.legislators)
 
 class Vote(FiftyStatesApiObject):
