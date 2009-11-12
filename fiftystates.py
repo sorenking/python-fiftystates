@@ -51,13 +51,13 @@ class Legislator(FiftyStatesApiObject):
 
     @staticmethod
     def get(id):
-        func = 'legislator/%d' % id
+        func = 'legislators/%d' % id
         obj = apicall(func)
         return Legislator(obj)
 
     @staticmethod
     def search(**kwargs):
-        func = 'legislator/search'
+        func = 'legislators/search'
         obj = apicall(func, kwargs)
         return map(Legislator, obj)
 
@@ -84,7 +84,7 @@ class Vote(FiftyStatesApiObject):
 
     @staticmethod
     def get(id):
-        func = 'vote/%d' % id
+        func = 'votes/%d' % id
         obj = apicall(func)
         return Vote(obj)
 
@@ -131,14 +131,14 @@ class Bill(FiftyStatesApiObject):
 
     @staticmethod
     def get(state, session, chamber, bill_id):
-        func = '%s/bill/%s/%s/%s' % (state, session, chamber, bill_id)
+        func = '%s/%s/%s/bills/%s' % (state, session, chamber, bill_id)
         obj = apicall(func)
         return Bill(obj)
 
     def __init__(self, obj):
         super(Bill, self).__init__(obj)
         self.last_action = parse_date(self.last_action)
-        self.date_added = parse_date(self.date_added)
+        self.first_action = parse_date(self.first_action)
         self.actions = map(Action, self.actions)
         self.sponsors = map(Sponsor, self.sponsors)
         self.votes = map(Vote, self.votes)

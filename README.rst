@@ -45,13 +45,16 @@ Some examples:
     20092010 Special Session 2
     20092010 Special Session 3
     20092010 Special Session 4
+    20092010 Special Session 5
+    20092010 Special Session 6
+    20092010 Special Session 7
 
     >>> mikes = fiftystates.Legislator.search(state='ca', first_name='Mike')
     >>> for mike in mikes:
     ...     print mike.full_name
+    Duvall, Mike D.
     Davis, Mike
     Eng, Mike
-    Duvall, Mike D.
     Feuer, Mike
 
     >>> dem_mikes = fiftystates.Legislator.search(state='ca',
@@ -68,19 +71,19 @@ Some examples:
 
     >>> for sponsor in bill.sponsors:
     ...    print sponsor.full_name
-    Solorio, Jose
-    Block, Marty
-    Portantino, Anthony
     Torlakson, Tom
+    Portantino, Anthony
+    Block, Marty
+    Solorio, Jose
 
     >>> for action in bill.actions[0:3]:
     ...     print action
-    Senate (Committee CS61): Read second time, amended, and re-referred to Com. on  APPR.
-    Senate (Floor Second Reading): From committee:  Amend, do pass as amended, and re-refer to Com. on  APPR.  (Ayes  5. Noes  0.) (June  23).
-    Senate (Committee): From committee:  Do pass, and re-refer to Com. on  JUD. Re-referred.  (Ayes  8. Noes  0.) (June  10).
+    Secretary of State: Chaptered by Secretary of State - Chapter   402, Statutes of 2009.
+    Governor: Approved by the Governor.
+    Governor: Enrolled and to the Governor at   5 p.m.
 
     >>> vote = bill.votes[0]
     >>> print vote.motion
-    Do pass and be re-referred to the Committee on Appropriations.
+    Do pass as amended and be re-referred to the Committee on Business and Professions.
     >>> print vote.yes_count, vote.no_count, vote.other_count
-    7 3 0
+    9 0 0
