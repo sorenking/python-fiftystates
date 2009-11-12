@@ -87,3 +87,11 @@ Some examples:
     Do pass as amended and be re-referred to the Committee on Business and Professions.
     >>> print vote.yes_count, vote.no_count, vote.other_count
     9 0 0
+
+    >>> district = fiftystates.District.get('ny', '2009-2010', 'lower', '106')
+    >>> print district.legislators[0].full_name
+    Ronald J. Canestrari
+
+    >>> district_geo = fiftystates.District.geo('ny', '2009-2010', 'lower', -73.675451, 42.737498)
+    >>> district.name == district_geo.name
+    True

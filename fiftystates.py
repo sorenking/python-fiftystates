@@ -68,6 +68,25 @@ class Legislator(FiftyStatesApiObject):
     def __str__(self):
         return self.full_name
 
+class District(FiftyStatesApiObject):
+
+    @staticmethod
+    def get(state, session, chamber, district):
+        func = '%s/%s/%s/districts/%s' % (state, session, chamber, district)
+        obj = apicall(func)
+        return District(obj)
+
+    @staticmethod
+    def geo(state, session, chamber, lat, long):
+        func = '%s/%s/%s/districts/geo' % (state, session, chamber)
+        params = {'lat': lat, 'long': long}
+        obj = apicall(func, params)
+        return District(obj)
+
+    def __init__(self, obj):
+        self.__dict__.update(obj)
+        self.legislators = map(Legislator, self.legislators)
+
 class Vote(FiftyStatesApiObject):
 
     class SpecificVote(FiftyStatesApiObject):
