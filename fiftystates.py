@@ -161,6 +161,13 @@ class Bill(FiftyStatesApiObject):
         obj = apicall(func)
         return Bill(obj)
 
+    @staticmethod
+    def search(query, **kwargs):
+        kwargs['q'] = query
+        func = 'bills/search'
+        obj = apicall(func, kwargs)
+        return map(Bill, obj)
+
     def __init__(self, obj):
         super(Bill, self).__init__(obj)
         self.last_action = parse_date(self.last_action)
