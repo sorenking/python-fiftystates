@@ -22,7 +22,7 @@ class FiftyStatesApiError(Exception):
     
 def apicall(func, params={}):
     params['format'] = 'json'
-    url = 'http://174.129.25.59/api/%s/?%s' % (func,
+    url = 'http://fiftystates-dev.sunlightlabs.com/api/%s/?%s' % (func,
                                               urllib.urlencode(params))
     try:
         response = urllib2.urlopen(url).read()
