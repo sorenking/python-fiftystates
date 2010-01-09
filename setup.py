@@ -22,6 +22,5 @@ setup(name="python-fiftystates",
                    "Programming Language :: Python",
                    "Topic :: Software Development :: Libraries :: Python Modules",
                    ],
-      install_requires=["simplejson >= 1.8",
-                        "remoteobjects >= 1.1"]
+      install_requires=["remoteobjects >= 1.1"]
       )
