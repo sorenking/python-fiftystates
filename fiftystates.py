@@ -10,171 +10,164 @@ __copyright__ = "Copyright (c) 2009 Sunlight Labs"
 __license__ = "BSD"
 __version__ = "0.1"
 
-import urllib, urllib2
-import datetime
-try:
-    import json
-except ImportError:
-    import simplejson as json
+from remoteobjects import RemoteObject, fields, ListObject
+import urllib
 
-class FiftyStatesApiError(Exception):
-    pass
+FIFTYSTATES_URL = "http://fiftystates-dev.sunlightlabs.com/api/"
+
+class FiftystatesDatetime(fields.Datetime):
+    dateformat = '%Y-%m-%d %H:%M:%S'
+
+class FiftystatesObject(RemoteObject):
+    @classmethod
+    def get(cls, func, params={}):
+        params['format'] = 'json'
+        url = "%s%s/?%s" % (FIFTYSTATES_URL, func,
+                            urllib.urlencode(params))
+        return super(FiftystatesObject, cls).get(url)
     
-def apicall(func, params={}):
-    params['format'] = 'json'
-    url = 'http://fiftystates-dev.sunlightlabs.com/api/%s/?%s' % (func,
-                                              urllib.urlencode(params))
-    try:
-        response = urllib2.urlopen(url).read()
-        obj = json.loads(response)
-        return obj
-    except urllib2.HTTPError, e:
-        raise FiftyStatesApiError(e.read())
-    except ValueError, e:
-        raise FiftyStatesApiError('Invalid Response')
+class Session(FiftystatesObject):
+    start_year = fields.Field()
+    end_year = fields.Field()
+    name = fields.Field()
 
-def parse_date(date_str):
-    return datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+    def __str__(self):
+        return self.name
 
-class FiftyStatesApiObject(object):
+class State(FiftystatesObject):
+    name = fields.Field()
+    abbreviation = fields.Field()
+    legislature_name = fields.Field()
+    upper_chamber_name = fields.Field()
+    lower_chamber_name = fields.Field()
+    upper_chamber_term = fields.Field()
+    lower_chamber_term = fields.Field()
+    upper_chamber_title = fields.Field()
+    lower_chamber_title = fields.Field()
+    sessions = fields.List(fields.Object(Session))
+
+    @classmethod
+    def get(cls, abbrev):
+        return super(State, cls).get(abbrev)
+
+    def __str__(self):
+        return self.name
+
+class Action(FiftystatesObject):
+    date = FiftystatesDatetime()
+    actor = fields.Field()
+    action = fields.Field()
+
+    def __str__(self):
+        return '%s: %s' % (self.actor, self.action)
+
+class Sponsor(FiftystatesObject):
+    leg_id = fields.Field()
+    full_name = fields.Field()
+    type = fields.Field()
+
+    def __str__(self):
+        return self.full_name
+
+class Vote(FiftystatesObject):
+    vote_id = fields.Field()
+    date = FiftystatesDatetime()
+    chamber = fields.Field()
+    motion = fields.Field()
+    yes_count = fields.Field()
+    no_count = fields.Field()
+    other_count = fields.Field()
+    passed = fields.Field()
+
+    @classmethod
+    def get(cls, id):
+        func = 'vote/%d' % id
+        return super(Vote, cls).get(func)
+
+    def __str__(self):
+        return "Vote on '%s'" % self.motion
+
+class Version(FiftystatesObject):
+    url = fields.Field()
+    name = fields.Field()
+
+def ListOf(cls):
+    class List(ListObject, FiftystatesObject):
+        entries = fields.List(fields.Object(cls))
+    return List
     
-    def __init__(self, obj):
-        self.__dict__.update(obj)
-    
-class Role(FiftyStatesApiObject):
+class Bill(FiftystatesObject):
+    title = fields.Field()
+    state = fields.Field()
+    session = fields.Field()
+    chamber = fields.Field()
+    bill_id = fields.Field()
+    actions = fields.List(fields.Object(Action))
+    sponsors = fields.List(fields.Object(Sponsor))
+    votes = fields.List(fields.Object(Vote))
+    versions = fields.List(fields.Object(Version))
 
-    class ContactInfo(FiftyStatesApiObject):
-        pass
+    @classmethod
+    def get(cls, state, session, chamber, bill_id):
+        func = "%s/%s/%s/bills/%s" % (state, session, chamber, bill_id)
+        return super(Bill, cls).get(func)
 
-    def __init__(self, obj):
-        super(Role, self).__init__(obj)
-        self.contact_info = map(self.ContactInfo, self.contact_info)
+    @classmethod
+    def search(cls, query, **kwargs):
+        kwargs['q'] = query
+        func = 'bills/search'
+        return ListOf(cls).get(func, kwargs).entries
+
+    def __str__(self):
+        return '%s: %s' % (self.bill_id, self.title)
+
+class Role(FiftystatesObject):
+    state = fields.Field()
+    session = fields.Field()
+    chamber = fields.Field()
+    district = fields.Field()
+    contact_info = fields.List(fields.Dict(fields.Field()))
 
     def __str__(self):
         return '%s %s %s district %s' % (self.state, self.chamber,
                                          self.session, self.district)
     
-class Legislator(FiftyStatesApiObject):
+class Legislator(FiftystatesObject):
+    leg_id = fields.Field()
+    full_name = fields.Field()
+    first_name = fields.Field()
+    last_name = fields.Field()
+    middle_name = fields.Field()
+    suffix = fields.Field()
+    party = fields.Field()
+    roles = fields.List(fields.Object(Role))
 
-    @staticmethod
-    def get(id):
-        func = 'legislators/%d' % id
-        obj = apicall(func)
-        return Legislator(obj)
+    @classmethod
+    def get(cls, id):
+        func = 'legislator/%d' % id
+        return super(Legislator, cls).get(func)
 
-    @staticmethod
-    def search(**kwargs):
-        func = 'legislators/search'
-        obj = apicall(func, kwargs)
-        return map(Legislator, obj)
-
-    def __init__(self, obj):
-        super(Legislator, self).__init__(obj)
-        self.roles = map(Role, self.roles)
+    @classmethod
+    def search(cls, **kwargs):
+        return ListOf(cls).get('legislators/search', kwargs).entries
 
     def __str__(self):
         return self.full_name
+    
+class District(FiftystatesObject):
+    state = fields.Field()
+    session = fields.Field()
+    chamber = fields.Field()
+    name = fields.Field()
+    legislators = fields.List(fields.Object(Legislator))
 
-class District(FiftyStatesApiObject):
-
-    @staticmethod
-    def get(state, session, chamber, district):
+    @classmethod
+    def get(cls, state, session, chamber, district):
         func = '%s/%s/%s/districts/%s' % (state, session, chamber, district)
-        obj = apicall(func)
-        return District(obj)
+        return super(District, cls).get(func)
 
-    @staticmethod
-    def geo(state, session, chamber, lat, long):
+    @classmethod
+    def geo(cls, state, session, chamber, lat, long):
         func = '%s/%s/%s/districts/geo' % (state, session, chamber)
         params = {'lat': lat, 'long': long}
-        obj = apicall(func, params)
-        return District(obj)
-
-    def __init__(self, obj):
-        super(District, self).__init__(obj)
-        self.legislators = map(Legislator, self.legislators)
-
-class Vote(FiftyStatesApiObject):
-
-    class SpecificVote(FiftyStatesApiObject):
-
-        def __str__(self):
-            return "%s voted %s" % (self.full_name, self.type)
-    
-    def __init__(self, obj):
-        super(Vote, self).__init__(obj)
-        self.date = parse_date(self.date)
-
-        if 'roll' in obj:
-            self.roll = map(self.SpecificVote, self.roll)
-
-    @staticmethod
-    def get(id):
-        func = 'votes/%d' % id
-        obj = apicall(func)
-        return Vote(obj)
-
-    def __str__(self):
-        return "Vote on '%s'" % self.motion
-
-class Sponsor(FiftyStatesApiObject):
-    
-    def get_legislator(self):
-        return Legislator.get(self.leg_id)
-
-    def __str__(self):
-        return self.full_name
-
-class Action(FiftyStatesApiObject):
-    
-    def __init__(self, obj):
-        super(Action, self).__init__(obj)
-        self.date = parse_date(self.date)
-
-    def __str__(self):
-        return '%s: %s' % (self.actor, self.action)
-
-class Session(FiftyStatesApiObject):
-
-    def __str__(self):
-        return self.name
-    
-class State(FiftyStatesApiObject):
-
-    @staticmethod
-    def get(abbrev):
-        obj = apicall(abbrev)
-        return State(obj)
-
-    def __init__(self, obj):
-        super(State, self).__init__(obj)
-        self.sessions = map(Session, self.sessions)
-
-    def __str__(self):
-        return self.name
-
-class Bill(FiftyStatesApiObject):
-
-    @staticmethod
-    def get(state, session, chamber, bill_id):
-        func = '%s/%s/%s/bills/%s' % (state, session, chamber, bill_id)
-        obj = apicall(func)
-        return Bill(obj)
-
-    @staticmethod
-    def search(query, **kwargs):
-        kwargs['q'] = query
-        func = 'bills/search'
-        obj = apicall(func, kwargs)
-        return map(Bill, obj)
-
-    def __init__(self, obj):
-        super(Bill, self).__init__(obj)
-        self.last_action = parse_date(self.last_action)
-        self.first_action = parse_date(self.first_action)
-        self.actions = map(Action, self.actions)
-        self.sponsors = map(Sponsor, self.sponsors)
-        self.votes = map(Vote, self.votes)
-
-    def __str__(self):
-        return '%s: %s' % (self.bill_id, self.title)
+        return super(District, cls).get(func, params)

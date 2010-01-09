@@ -123,5 +123,5 @@ Lookup a district by latitude and longitude:
 
 Get contact info for legislators:
 
-    >>> print district.legislators[0].roles[0].contact_info[0].phone
+    >>> print district.legislators[0].roles[0].contact_info[0]['phone']
     518-455-4474
